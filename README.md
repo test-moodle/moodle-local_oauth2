@@ -30,7 +30,7 @@ Oauth2 Library has been taken from https://github.com/bshaffer/oauth2-server-php
 
 3. If it went all OK, the plugin should redirect the user to something like: `http://yourapplicationdomain.com/foo?code=55c057549f29c428066cbbd67ca6b17099cb1a9e` *(that's a GET request to the Redirect URI given with the code parameter)*
 
-4. Using the code given, your application must send a POST request to `http://moodledomain.com/local/oauth2/token.php`  with the following parameters: `{'code': '55c057549f29c428066cbbd67ca6b17099cb1a9e', 'client_id': 'EXAMPLE', 'client_secret': 'codeGivenAfterTheFormWasFilled', 'grant_type': 'authorization_code', 'scope': '[SCOPES SEPARATED BY COMMA'}`. 
+4. Using the code given, your application must send a POST request to `http://moodledomain.com/local/oauth2/token.php`  with the following parameters: `{'code': '55c057549f29c428066cbbd67ca6b17099cb1a9e', 'client_id': 'EXAMPLE', 'client_secret': 'codeGivenAfterTheFormWasFilled', 'grant_type': 'authorization_code', 'scope': '[SCOPES SEPARATED BY COMMA]'}`. 
 
 5. If the correct credentials were given, the response should a JSON be like this: `{"access_token":"79d687a0ea4910c6662b2e38116528fdcd65f0d1","expires_in":3600,"token_type":"Bearer","scope":"[SCOPES]","refresh_token":"c1de730eef1b2072b48799000ec7cde4ea6d2af0"}`
 
@@ -40,7 +40,27 @@ Note: If testing in Postman, you need to set encoding to `x-www-form-urlencoded`
 
 ## How to use the refresh token
 
-TODO: Add the steps to use the refresh token.
+When the access_token expires, your application must request a new one using the refresh_token.
+
+1. Endpoint
+Send a POST request to: `http://moodledomain.com/local/oauth2/refresh_token.php`  with the following
+2. Request parameters: `{'client_id': 'EXAMPLE', 'client_secret': 'codeGivenAfterTheFormWasFilled', 'grant_type': 'refresh_token', 'refresh_token': 'c1de730eef1b2072b48799000ec7cde4ea6d2af0}`.
+(See step 6 above for details on the refresh token.)
+
+3. Response
+If the request is successful, the response will contain a new access token and a new refresh token:
+`{
+    "access_token": "1703c39b0a9e462e2430a2e53da3299696bdefd5",
+    "expires_in": 10800,
+    "token_type": "Bearer",
+    "scope": "[SCOPES SEPARATED BY COMMA]",
+    "refresh_token": "c3150439e43649595a7b753ee1e99e041ee6aa0a"
+}`.
+
+4. Implementation Notes
+   •	Use the new access_token for API requests.
+   •	Replace the old refresh_token with the new one provided in the response.
+   •	If the refresh_token itself expires, the user must authenticate again to obtain new credentials.
 
 ## Contributors
 Apart from people in this repository, the plugin has been created based on the [local_oauth project] (https://github.com/projectestac/moodle-local_oauth) with the following contributors:
