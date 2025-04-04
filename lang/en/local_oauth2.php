@@ -58,7 +58,6 @@ $string['prvacy:metadata:local_oauth2_refresh_token:refresh_token'] = 'The refre
 $string['privacy:metadata:local_oauth2_refresh_token:client_id'] = 'The ID of the OAuth2 client to which the refresh token was issued.';
 $string['privacy:metadata:local_oauth2_refresh_token:expires'] = 'The expiration time of the refresh token.';
 $string['privacy:metadata:local_oauth2_refresh_token:scope'] = 'The scope of the refresh token.';
-$string['privacy:metadata:local_oauth2_refresh_token:refresh_token'] = 'The refresh token issued to the user.';
 
 // Capabilities.
 $string['oauth2:manage_oauth_clients'] = 'Manage OAuth clients';

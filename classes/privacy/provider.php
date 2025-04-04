@@ -22,7 +22,6 @@ use core_privacy\local\metadata\collection;
 use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\contextlist;
-use core_privacy\local\request\transform;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
 
@@ -110,20 +109,7 @@ class provider implements
      */
     public static function get_contexts_for_userid(int $userid): contextlist {
         $contextlist = new contextlist();
-
-        foreach (self::TABLES as $table) {
-            $sql = "SELECT ctx.id
-                     FROM {{$table}} t
-                     JOIN {context} ctx ON t.user_id = ctx.instanceid AND ctx.contextlevel = :contextlevel
-                    WHERE t.user_id = :userid";
-
-            $params = [
-                'contextlevel' => CONTEXT_USER,
-                'userid' => $userid,
-            ];
-
-            $contextlist->add_from_sql($sql, $params);
-        }
+        $contextlist->add_system_context();
 
         return $contextlist;
     }
@@ -152,15 +138,19 @@ class provider implements
      * @param approved_contextlist $contextlist The approved contexts to export information for.
      * @return void
      */
-    public static function export_user_data(\core_privacy\local\request\approved_contextlist $contextlist) {
-        if (empty($contextlist)) {
-            return;
-        }
+    public static function export_user_data(approved_contextlist $contextlist) {
+        global $DB;
 
-        foreach ($contextlist as $context) {
-            if ($context->contextlevel == CONTEXT_USER) {
-                // Export user data for the specified user in the specified contexts.
-                self::export_local_oauth2_userdata($context);
+        $user = $contextlist->get_user();
+        $context = context_system::instance();
+
+        foreach (static::TABLES as $table) {
+            $records = $DB->get_recordset($table, ['user_id' => $user->id]);
+
+            foreach ($records as $record) {
+                writer::with_context($context)
+                    ->export_data([get_string('privacy:metadata:' . $table, 'local_oauth2'), 'id_' . $record->id],
+                        $record);
             }
         }
     }
@@ -216,66 +206,6 @@ class provider implements
             foreach (static::TABLES as $table) {
                 $DB->delete_records($table, ['user_id' => $user->id]);
             }
-        }
-    }
-
-    /**
-     * Exports user data for the specified user in the specified contexts.
-     *
-     * @param context $context The context to export information for.
-     * @return void
-     */
-    public static function export_local_oauth2_userdata(\context $context) {
-        global $DB, $USER;
-        if (!$context instanceof \context_user) {
-            return;
-        }
-
-        $subcontext[] = get_string('pluginname', 'local_oauth2');
-
-        $data = [];
-        $usertokendata = [];
-        $usercodedata = [];
-        $userrefreshtokendata = [];
-        $notexportedstr = get_string('privacy:request:notexportedsecurity', 'core_external');
-
-        foreach (self::TABLES as $table) {
-            $sql = "SELECT t.*
-                      FROM {{$table}} t
-                     WHERE t.user_id = :userid";
-            $params = [
-                'userid' => $USER->id,
-            ];
-            $records = $DB->get_records_sql($sql, $params);
-
-            foreach ($records as $record) {
-                $record->client_id = $notexportedstr;
-                if ($table == 'local_oauth2_access_token') {
-                    $record->access_token = $notexportedstr;
-                    $record->expires = transform::datetime($record->expires);
-                    $usertokendata[] = $record;
-                } else if ($table == 'local_oauth2_authorization_code') {
-                    $record->authorization_code = $notexportedstr;
-                    $record->expires = transform::datetime($record->expires);
-                    $usercodedata[] = $record;
-                } else if ($table == 'local_oauth2_refresh_token') {
-                    $record->refresh_token = $notexportedstr;
-                    $record->expires = transform::datetime($record->expires);
-                    $userrefreshtokendata[] = $record;
-                } else {
-                    $data[] = $record;
-                }
-            }
-        }
-
-        if (!empty($data) || !empty($usertokendata) || !empty($usercodedata) || !empty($userrefreshtokendata)) {
-            \core_privacy\local\request\writer::with_context($context)
-                ->export_data($subcontext, (object)[
-                    'userauthscope' => $data,
-                    'userauthtoken' => $usertokendata,
-                    'userauthcode' => $usercodedata,
-                    'userrefreshtoken' => $userrefreshtokendata,
-                ]);
         }
     }
 }
