@@ -100,7 +100,7 @@ class oauth_client_form extends moodleform {
         $errors = parent::validation($data, $files);
 
         // Field client_id cannot have space.
-        if (strpos($data['client_id'], ' ') !== false) {
+        if ($data['action'] == 'add' && strpos($data['client_id'], ' ') !== false) {
             $errors['client_id'] = get_string('oauth_client_id_cannot_contain_space', 'local_oauth2');
         }
 

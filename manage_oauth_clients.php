@@ -52,6 +52,7 @@ switch ($action) {
             $viewtable = true;
             break;
         }
+        $viewtable = false;
 
     case 'add':
         $form = new oauth_client_form();
@@ -103,6 +104,7 @@ switch ($action) {
         }
         $form->set_data($formdata);
         $form->display();
+        $viewtable = false;
 
         break;
 
@@ -117,6 +119,7 @@ switch ($action) {
                 break;
             }
 
+            $viewtable = false;
             echo $OUTPUT->confirm(get_string('delete_oauth_client_confirm', 'local_oauth2'),
                 new moodle_url('/local/oauth2/manage_oauth_clients.php', ['action' => 'delete', 'id' => $id, 'confirm' => 1]),
                 new moodle_url('/local/oauth2/manage_oauth_clients.php'));
